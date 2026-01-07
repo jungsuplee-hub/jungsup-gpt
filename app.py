@@ -104,6 +104,10 @@ def logout():
 def ask():
     api_key = os.environ.get("GEMINI_API_KEY")
     user_message = request.json.get('message')
+
+    if not api_key:
+        app.logger.error("GEMINI_API_KEY is not set; cannot call Gemini API.")
+        return jsonify({"error": "API 키가 설정되지 않았습니다."}), 500
     
     # 아까 성공한 모델 주소 사용
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
@@ -115,10 +119,15 @@ def ask():
     headers = {'Content-Type': 'application/json'}
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
-        response_data = response.json()
-        
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        try:
+            response_data = response.json()
+        except ValueError:
+            response_data = None
+
         if response.status_code == 200:
+            if not response_data:
+                raise ValueError("API 응답이 JSON이 아닙니다.")
             raw_text = response_data['candidates'][0]['content']['parts'][0]['text']
             # 마크다운을 HTML로 변환하여 전달 (Bold, 리스트 등 처리)
             html_text = markdown.markdown(raw_text, extensions=['fenced_code', 'tables'])
@@ -126,10 +135,16 @@ def ask():
                 save_question(session["user_id"], user_message, raw_text)
             return jsonify({"reply": html_text})
         else:
+            app.logger.error(
+                "Gemini API error: status=%s response=%s",
+                response.status_code,
+                response.text,
+            )
             if session.get("user_id"):
                 save_question(session["user_id"], user_message, "API 에러 발생")
             return jsonify({"error": "API 에러 발생"}), response.status_code
     except Exception as e:
+        app.logger.exception("Gemini API request failed: %s", e)
         if session.get("user_id"):
             save_question(session["user_id"], user_message, str(e))
         return jsonify({"error": str(e)}), 500
