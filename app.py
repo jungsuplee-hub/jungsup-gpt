@@ -98,7 +98,10 @@ def ask():
     # 아까 성공한 모델 주소 사용
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     
-    payload = {"contents": [{"parts": [{"text": user_message}]}]}
+    payload = {
+        "contents": [{"parts": [{"text": user_message}]}],
+        "tools": [{"google_search_retrieval": {}}],
+    }
     headers = {'Content-Type': 'application/json'}
 
     try:
