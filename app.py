@@ -114,7 +114,7 @@ def ask():
     
     payload = {
         "contents": [{"parts": [{"text": user_message}]}],
-        "tools": [{"google_search_retrieval": {}}],
+        "tools": [{"google_search": {}}],
     }
     headers = {'Content-Type': 'application/json'}
 
