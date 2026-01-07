@@ -94,11 +94,34 @@
 
         header {
             padding: 20px 32px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-title {
             font-size: 22px;
             font-weight: 700;
         }
 
-        header span { color: var(--muted-text); font-size: 14px; display: block; margin-top: 6px; }
+        .header-subtitle { color: var(--muted-text); font-size: 14px; display: block; margin-top: 6px; }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--muted-text);
+        }
+
+        .logout {
+            color: var(--text-color);
+            text-decoration: none;
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
 
         #chat-container {
             flex: 1;
@@ -191,12 +214,18 @@
             <div class="brand">정섭GPT</div>
             <button class="new-chat" onclick="startNewChat()">+ 새 대화</button>
             <div class="sessions" id="session-list"></div>
-            <div class="sidebar-footer">대화는 브라우저에 자동 저장됩니다.</div>
+            <div class="sidebar-footer">질문 기록은 서버 DB에 저장됩니다.</div>
         </aside>
         <main class="main">
             <header>
-                ChatGPT 스타일 UI
-                <span>질문 기록은 세션으로 저장됩니다.</span>
+                <div>
+                    <div class="header-title">정섭GPT</div>
+                    <span class="header-subtitle">아이디와 이메일로 로그인한 사용자 질문이 저장됩니다.</span>
+                </div>
+                <div class="header-actions">
+                    <span>{{ username }}님</span>
+                    <a class="logout" href="/logout">로그아웃</a>
+                </div>
             </header>
             <div id="chat-container"></div>
             <div class="input-area">
