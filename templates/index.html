@@ -254,6 +254,7 @@
     </div>
 
     <script>
+        const isLoggedIn = {{ 'true' if username else 'false' }};
         const STORAGE_KEY = 'leegpt.sessions';
         const ACTIVE_KEY = 'leegpt.active';
         let sessions = loadSessions();
@@ -263,15 +264,20 @@
             activeSessionId = sessions[0].id;
         }
 
-        renderSessions();
-        renderMessages();
+        initializeSessions();
 
         function loadSessions() {
+            if (isLoggedIn) {
+                return [];
+            }
             const stored = localStorage.getItem(STORAGE_KEY);
             return stored ? JSON.parse(stored) : [];
         }
 
         function saveSessions() {
+            if (isLoggedIn) {
+                return;
+            }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
             if (activeSessionId) {
                 localStorage.setItem(ACTIVE_KEY, activeSessionId);
@@ -279,7 +285,39 @@
         }
 
         function loadActiveSession() {
+            if (isLoggedIn) {
+                return null;
+            }
             return localStorage.getItem(ACTIVE_KEY);
+        }
+
+        async function initializeSessions() {
+            if (isLoggedIn) {
+                await loadServerHistory();
+            }
+            if (!activeSessionId && sessions.length) {
+                activeSessionId = sessions[0].id;
+            }
+            renderSessions();
+            renderMessages();
+        }
+
+        async function loadServerHistory() {
+            try {
+                const response = await fetch('/history');
+                const data = await response.json();
+                const serverSession = {
+                    id: 'server-session',
+                    title: '최근 대화',
+                    updatedAt: new Date().toISOString(),
+                    messages: data.messages || []
+                };
+                sessions = serverSession.messages.length ? [serverSession] : [];
+                activeSessionId = serverSession.messages.length ? serverSession.id : null;
+            } catch (e) {
+                sessions = [];
+                activeSessionId = null;
+            }
         }
 
         function startNewChat() {

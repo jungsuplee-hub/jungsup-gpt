@@ -60,6 +60,21 @@ def save_question(user_id, question, answer):
         )
         conn.commit()
 
+
+def load_questions(user_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute(
+            """
+            SELECT question, answer, created_at
+            FROM questions
+            WHERE user_id = ?
+            ORDER BY created_at ASC, id ASC
+            """,
+            (user_id,),
+        )
+        return cursor.fetchall()
+
 init_db()
 
 @app.route('/')
@@ -99,6 +114,32 @@ def signup():
 def logout():
     session.clear()
     return redirect(url_for("index"))
+
+@app.route('/history')
+def history():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"messages": []})
+    rows = load_questions(user_id)
+    messages = []
+    for row in rows:
+        messages.append(
+            {
+                "role": "user",
+                "content": row["question"],
+                "isHtml": False,
+            }
+        )
+        messages.append(
+            {
+                "role": "assistant",
+                "content": markdown.markdown(
+                    row["answer"], extensions=['fenced_code', 'tables']
+                ),
+                "isHtml": True,
+            }
+        )
+    return jsonify({"messages": messages})
 
 @app.route('/ask', methods=['POST'])
 def ask():
