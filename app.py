@@ -112,9 +112,25 @@ def ask():
     # 아까 성공한 모델 주소 사용
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     
+    system_instruction = (
+        "당신은 정섭이의 친절하고 유능한 AI 비서입니다. 사용자의 질문에 대해 "
+        "여러 번 다시 묻지 않고, 한 번의 답변에 최대한 상세하고 구체적인 정보를 담아 "
+        "전문적으로 답변하세요. 필요한 경우 단계별 설명이나 예시를 포함하세요."
+    )
+
     payload = {
+        "system_instruction": {"parts": [{"text": system_instruction}]},
         "contents": [{"parts": [{"text": user_message}]}],
-        "tools": [{"google_search": {}}],
+        "tools": [
+            {
+                "google_search_retrieval": {
+                    "dynamic_retrieval_config": {
+                        "mode": "MODE_DYNAMIC",
+                        "dynamic_threshold": 0.3,
+                    }
+                }
+            }
+        ],
     }
     headers = {'Content-Type': 'application/json'}
 
