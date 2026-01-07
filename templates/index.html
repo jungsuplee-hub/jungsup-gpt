@@ -237,7 +237,7 @@
                 <div class="header-actions">
                     {% if username %}
                         <span>{{ username }}님</span>
-                        <a class="logout" href="/logout">로그아웃</a>
+                        <a class="logout" href="/logout" onclick="handleLogout(event)">로그아웃</a>
                     {% else %}
                         <a class="logout" href="/login">로그인</a>
                         <a class="logout" href="/signup">회원가입</a>
@@ -360,6 +360,13 @@
         function formatTime(iso) {
             const date = new Date(iso);
             return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function handleLogout(event) {
+            event.preventDefault();
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(ACTIVE_KEY);
+            window.location.href = '/logout';
         }
 
         async function sendMessage() {
