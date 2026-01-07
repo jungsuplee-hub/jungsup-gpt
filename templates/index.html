@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>정섭GPT</title>
+    <title>LeeGPT</title>
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='favicon.jpg') }}">
     <style>
         :root {
@@ -212,7 +212,7 @@
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="brand">정섭GPT</div>
+            <div class="brand">LeeGPT</div>
             <button class="new-chat" onclick="startNewChat()">+ 새 대화</button>
             <div class="sessions" id="session-list"></div>
             <div class="sidebar-footer">
@@ -226,7 +226,7 @@
         <main class="main">
             <header>
                 <div>
-                    <div class="header-title">정섭GPT</div>
+                    <div class="header-title">LeeGPT</div>
                     <span class="header-subtitle">
                         {% if username %}
                             {{ username }}님의 질문이 저장됩니다.
@@ -254,8 +254,8 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'jungsupgpt.sessions';
-        const ACTIVE_KEY = 'jungsupgpt.active';
+        const STORAGE_KEY = 'leegpt.sessions';
+        const ACTIVE_KEY = 'leegpt.active';
         let sessions = loadSessions();
         let activeSessionId = loadActiveSession();
 
