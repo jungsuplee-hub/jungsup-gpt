@@ -259,6 +259,7 @@
         const ACTIVE_KEY = 'leegpt.active';
         let sessions = loadSessions();
         let activeSessionId = loadActiveSession();
+        let isLoadingMessages = false;
 
         if (!activeSessionId && sessions.length) {
             activeSessionId = sessions[0].id;
@@ -293,7 +294,13 @@
 
         async function initializeSessions() {
             if (isLoggedIn) {
-                await loadServerHistory();
+                await loadServerConversations();
+                if (!activeSessionId && sessions.length) {
+                    activeSessionId = sessions[0].id;
+                }
+                if (activeSessionId) {
+                    await loadServerMessages(activeSessionId);
+                }
             }
             if (!activeSessionId && sessions.length) {
                 activeSessionId = sessions[0].id;
@@ -302,25 +309,62 @@
             renderMessages();
         }
 
-        async function loadServerHistory() {
+        async function loadServerConversations() {
             try {
-                const response = await fetch('/history');
+                const response = await fetch('/conversations');
                 const data = await response.json();
-                const serverSession = {
-                    id: 'server-session',
-                    title: '최근 대화',
-                    updatedAt: new Date().toISOString(),
-                    messages: data.messages || []
-                };
-                sessions = serverSession.messages.length ? [serverSession] : [];
-                activeSessionId = serverSession.messages.length ? serverSession.id : null;
+                sessions = (data.conversations || []).map(conversation => ({
+                    id: String(conversation.id),
+                    title: conversation.title,
+                    updatedAt: conversation.updatedAt,
+                    messages: null,
+                    isServer: true
+                }));
+                activeSessionId = sessions.length ? sessions[0].id : null;
             } catch (e) {
                 sessions = [];
                 activeSessionId = null;
             }
         }
 
-        function startNewChat() {
+        async function loadServerMessages(sessionId) {
+            const session = sessions.find(item => item.id === sessionId);
+            if (!session || !session.isServer) {
+                return;
+            }
+            isLoadingMessages = true;
+            renderMessages();
+            try {
+                const response = await fetch(`/conversations/${sessionId}/messages`);
+                const data = await response.json();
+                session.messages = data.messages || [];
+            } catch (e) {
+                session.messages = [];
+            }
+            isLoadingMessages = false;
+            renderMessages();
+        }
+
+        async function startNewChat() {
+            if (isLoggedIn) {
+                const created = await createServerConversation();
+                if (!created) {
+                    return;
+                }
+                const newSession = {
+                    id: String(created.id),
+                    title: created.title,
+                    updatedAt: new Date().toISOString(),
+                    messages: [],
+                    isServer: true
+                };
+                sessions.unshift(newSession);
+                activeSessionId = newSession.id;
+                renderSessions();
+                renderMessages();
+                document.getElementById('user-input').focus();
+                return;
+            }
             const newSession = {
                 id: String(Date.now()),
                 title: '새 대화',
@@ -335,11 +379,15 @@
             document.getElementById('user-input').focus();
         }
 
-        function setActiveSession(id) {
+        async function setActiveSession(id) {
             activeSessionId = id;
-            saveSessions();
+            if (isLoggedIn) {
+                await loadServerMessages(id);
+            } else {
+                saveSessions();
+                renderMessages();
+            }
             renderSessions();
-            renderMessages();
         }
 
         function renderSessions() {
@@ -362,7 +410,11 @@
             const container = document.getElementById('chat-container');
             container.innerHTML = '';
             const session = sessions.find(item => item.id === activeSessionId);
-            if (!session || !session.messages.length) {
+            if (isLoadingMessages) {
+                container.innerHTML = '<div class="bubble">대화를 불러오는 중입니다...</div>';
+                return;
+            }
+            if (!session || !session.messages || !session.messages.length) {
                 container.innerHTML = '<div class="bubble">대화를 시작해보세요. 질문을 입력하면 세션에 자동 저장됩니다.</div>';
                 return;
             }
@@ -408,26 +460,50 @@
             window.location.href = '/logout';
         }
 
+        async function createServerConversation() {
+            try {
+                const response = await fetch('/conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                return data.conversation;
+            } catch (e) {
+                return null;
+            }
+        }
+
         async function sendMessage() {
             const input = document.getElementById('user-input');
             if (!input.value.trim()) return;
 
             if (!activeSessionId) {
-                startNewChat();
+                await startNewChat();
             }
 
             const session = sessions.find(item => item.id === activeSessionId);
+            if (!session) {
+                return;
+            }
             const userMsg = input.value.trim();
             input.value = '';
 
-            session.messages.push({ role: 'user', content: userMsg, isHtml: false });
-            if (session.title === '새 대화') {
-                session.title = userMsg.slice(0, 20);
+            if (session) {
+                if (!session.messages) {
+                    session.messages = [];
+                }
+                session.messages.push({ role: 'user', content: userMsg, isHtml: false });
+                if (session.title === '새 대화') {
+                    session.title = userMsg.slice(0, 20);
+                }
+                session.updatedAt = new Date().toISOString();
+                if (!isLoggedIn) {
+                    saveSessions();
+                }
+                renderSessions();
+                renderMessages();
             }
-            session.updatedAt = new Date().toISOString();
-            saveSessions();
-            renderSessions();
-            renderMessages();
 
             const container = document.getElementById('chat-container');
             const loadingRow = document.createElement('div');
@@ -440,7 +516,10 @@
                 const response = await fetch('/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: userMsg })
+                    body: JSON.stringify({
+                        message: userMsg,
+                        conversationId: isLoggedIn ? Number(activeSessionId) : null
+                    })
                 });
                 const data = await response.json();
                 loadingRow.remove();
@@ -455,10 +534,14 @@
                 session.messages.push({ role: 'assistant', content: '서버 연결 오류', isHtml: false });
             }
 
-            session.updatedAt = new Date().toISOString();
-            saveSessions();
-            renderSessions();
-            renderMessages();
+            if (session) {
+                session.updatedAt = new Date().toISOString();
+                if (!isLoggedIn) {
+                    saveSessions();
+                }
+                renderSessions();
+                renderMessages();
+            }
         }
     </script>
 </body>
