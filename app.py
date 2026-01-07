@@ -113,7 +113,7 @@ def ask():
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     
     system_instruction = (
-        "당신은 정섭이의 친절하고 유능한 AI 비서입니다. 사용자의 질문에 대해 "
+        "당신은 LeeGPT의 친절하고 유능한 AI 비서입니다. 사용자의 질문에 대해 "
         "여러 번 다시 묻지 않고, 한 번의 답변에 최대한 상세하고 구체적인 정보를 담아 "
         "전문적으로 답변하세요. 필요한 경우 단계별 설명이나 예시를 포함하세요."
     )
