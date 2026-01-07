@@ -64,8 +64,6 @@ init_db()
 
 @app.route('/')
 def index():
-    if not session.get("user_id"):
-        return redirect(url_for("login"))
     return render_template('index.html', username=session.get("username"))
 
 
@@ -83,15 +81,27 @@ def login():
     return render_template('login.html')
 
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        if not username or not email:
+            return render_template('signup.html', error="아이디와 이메일을 모두 입력해주세요.")
+        user_id = get_or_create_user(username, email)
+        session["user_id"] = user_id
+        session["username"] = username
+        return redirect(url_for("index"))
+    return render_template('signup.html')
+
+
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 @app.route('/ask', methods=['POST'])
 def ask():
-    if not session.get("user_id"):
-        return jsonify({"error": "로그인이 필요합니다."}), 401
     api_key = os.environ.get("GEMINI_API_KEY")
     user_message = request.json.get('message')
     
@@ -112,13 +122,16 @@ def ask():
             raw_text = response_data['candidates'][0]['content']['parts'][0]['text']
             # 마크다운을 HTML로 변환하여 전달 (Bold, 리스트 등 처리)
             html_text = markdown.markdown(raw_text, extensions=['fenced_code', 'tables'])
-            save_question(session["user_id"], user_message, raw_text)
+            if session.get("user_id"):
+                save_question(session["user_id"], user_message, raw_text)
             return jsonify({"reply": html_text})
         else:
-            save_question(session["user_id"], user_message, "API 에러 발생")
+            if session.get("user_id"):
+                save_question(session["user_id"], user_message, "API 에러 발생")
             return jsonify({"error": "API 에러 발생"}), response.status_code
     except Exception as e:
-        save_question(session["user_id"], user_message, str(e))
+        if session.get("user_id"):
+            save_question(session["user_id"], user_message, str(e))
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

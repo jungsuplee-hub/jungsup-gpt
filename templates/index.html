@@ -214,17 +214,34 @@
             <div class="brand">정섭GPT</div>
             <button class="new-chat" onclick="startNewChat()">+ 새 대화</button>
             <div class="sessions" id="session-list"></div>
-            <div class="sidebar-footer">질문 기록은 서버 DB에 저장됩니다.</div>
+            <div class="sidebar-footer">
+                {% if username %}
+                    질문 기록이 서버 DB에 저장됩니다.
+                {% else %}
+                    게스트 사용 중입니다. 회원가입하면 검색 기록이 저장됩니다.
+                {% endif %}
+            </div>
         </aside>
         <main class="main">
             <header>
                 <div>
                     <div class="header-title">정섭GPT</div>
-                    <span class="header-subtitle">아이디와 이메일로 로그인한 사용자 질문이 저장됩니다.</span>
+                    <span class="header-subtitle">
+                        {% if username %}
+                            {{ username }}님의 질문이 저장됩니다.
+                        {% else %}
+                            회원가입 없이 사용할 수 있으며, 회원가입 시 검색 기록이 저장됩니다.
+                        {% endif %}
+                    </span>
                 </div>
                 <div class="header-actions">
-                    <span>{{ username }}님</span>
-                    <a class="logout" href="/logout">로그아웃</a>
+                    {% if username %}
+                        <span>{{ username }}님</span>
+                        <a class="logout" href="/logout">로그아웃</a>
+                    {% else %}
+                        <a class="logout" href="/login">로그인</a>
+                        <a class="logout" href="/signup">회원가입</a>
+                    {% endif %}
                 </div>
             </header>
             <div id="chat-container"></div>
