@@ -123,12 +123,7 @@ def ask():
         "contents": [{"parts": [{"text": user_message}]}],
         "tools": [
             {
-                "google_search_retrieval": {
-                    "dynamic_retrieval_config": {
-                        "mode": "MODE_DYNAMIC",
-                        "dynamic_threshold": 0.3,
-                    }
-                }
+                "google_search": {}
             }
         ],
     }
