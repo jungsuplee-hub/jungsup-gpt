@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로그인 - 정섭GPT</title>
+    <title>회원가입 - 정섭GPT</title>
     <style>
         :root {
             --bg-color: #0e0f10;
@@ -104,10 +104,10 @@
     </style>
 </head>
 <body>
-    <form class="card" method="post" action="/login">
+    <form class="card" method="post" action="/signup">
         <div>
-            <h1>로그인</h1>
-            <p>회원가입을 이미 했다면 로그인해서 기록을 저장하세요.</p>
+            <h1>회원가입</h1>
+            <p>회원가입을 완료하면 검색 기록이 저장됩니다.</p>
         </div>
         {% if error %}
         <div class="error">{{ error }}</div>
@@ -120,8 +120,8 @@
             <label for="email">이메일</label>
             <input id="email" name="email" type="email" placeholder="email@example.com" required>
         </div>
-        <button type="submit">입장하기</button>
-        <div class="link-row">아직 회원이 아니신가요? <a href="/signup">회원가입</a></div>
+        <button type="submit">회원가입 완료</button>
+        <div class="link-row">이미 계정이 있나요? <a href="/login">로그인</a></div>
     </form>
 </body>
 </html>
